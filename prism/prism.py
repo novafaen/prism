@@ -1,4 +1,4 @@
-import logging
+import logging, json
 
 from smrt import SMRTApp, app, make_response, request, jsonify, produces, consumes
 from prism import lifx_client, yeelight_client
@@ -22,9 +22,6 @@ class Prism(SMRTApp):
     @staticmethod
     def client_name():
         return 'Prism'
-
-    def add_light(self, light_json):
-        pass
 
     @staticmethod
     def get_lights():
@@ -60,29 +57,55 @@ def get_lights():
     }
 
     response = make_response(jsonify(response), 200)
-    response.headers['Content-Type'] = 'application/se.novafaen.smrt.light.v1+json'
+    response.headers['Content-Type'] = 'application/se.novafaen.prism.lights.v1+json'
     return response
 
 
 @app.route('/light/<string:name>', methods=['GET'])
+@produces('application/se.novafaen.prism.light.v1+json')
 def get_light(name):
     light = app_light.get_light(name)
 
-    if light is not None:
-        code = 200
-        body = {
-            'name': light.get_name(),
-            'protocol': light.protocol()
-        }
-        content_type = 'application/se.novafaen.smrt.light.v1+json'
-    else:
-        code = 404
+    if light is None:
         body = {
             'status': 'NotFound',
             'message': 'Could not find light \'%s\'' % name
         }
-        content_type = 'application/se.novafaen.smrt.error.v1+json'
+        response = make_response(jsonify(body), 404)
+        response.headers['Content-Type'] = 'application/se.novafaen.smrt.error.v1+json'
+        return response
 
-    response = make_response(jsonify(body), code)
-    response.headers['Content-Type'] = content_type
+    body = {
+        'name': light.get_name(),
+        'protocol': light.protocol()
+    }
+
+    response = make_response(jsonify(body), 200)
+    response.headers['Content-Type'] = 'application/se.novafaen.prism.light.v1+json'
+    return response
+
+
+@app.route('/light/<string:name>/state', methods=['POST'])
+@consumes('application/se.novafaen.prism.lightstate.v1+json')
+@produces('application/se.novafaen.prism.light.v1+json')
+def post_light_state(name):
+    light = app_light.get_light(name)
+
+    if light is None:
+        body = {
+            'status': 'NotFound',
+            'message': 'Could not find light \'%s\'' % name
+        }
+        response = make_response(jsonify(body), 404)
+        response.headers['Content-Type'] = 'application/se.novafaen.smrt.error.v1+json'
+        return response
+
+    logging.debug('setting light "%s" to state %s', name, request.data)
+
+    data = json.loads(request.data)
+
+    light.set_state(data)
+
+    response = make_response(jsonify(''), 204)
+    response.headers['Content-Type'] = 'application/se.novafaen.prism.light.v1+json'
     return response

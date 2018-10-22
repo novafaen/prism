@@ -1,8 +1,9 @@
 import logging
 
 import yeelight
+from yeelight import Bulb
 
-from prism.light import LightProtocol
+from prism.light import LightProtocol, LightState
 
 _cache = {}
 
@@ -14,7 +15,7 @@ def get_lights():
     for raw_light in raw_lights:
         name = raw_light['capabilities']['name']
         if name not in _cache:
-            _cache[name] = YeelightLight(name, raw_light)
+            _cache[name] = YeelightLight(name, Bulb(raw_light['ip']))
 
     return list(_cache.values())
 
@@ -42,3 +43,22 @@ class YeelightLight(LightProtocol):
 
     def get_name(self):
         return self._name
+
+    def set_state(self, data):
+        response = True
+
+        state = YeelightState(data)
+
+        if state.power is not None:
+            action_response = self._client.send_command('set_power', [state.power])
+            response &= action_response['result'] == ['ok']
+
+        return response
+
+
+class YeelightState(LightState):
+    power = None
+
+    def __init__(self, data):
+        if 'power' in data:
+            self.power = 'on' if data['power'] else 'off'

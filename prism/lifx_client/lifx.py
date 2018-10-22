@@ -2,7 +2,7 @@ import logging
 
 from lifxlan import LifxLAN
 
-from prism.light import LightProtocol
+from prism.light import LightProtocol, LightState
 
 _lifxlan = LifxLAN()
 _cache = {}
@@ -45,3 +45,19 @@ class LifxLight(LightProtocol):
 
     def get_name(self):
         return self._name
+
+    def set_state(self, state_data):
+        state = LifxState(state_data)
+
+        if state.power is not None:
+            self._client.set_power(state.power)
+
+        return None  # TODO: third party library does not give success or fail status
+
+
+class LifxState(LightState):
+    power = None
+
+    def __init__(self, data):
+        if 'power' in data:
+            self.power = True if data['power'] else False
