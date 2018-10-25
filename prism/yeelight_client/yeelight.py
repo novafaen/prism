@@ -49,16 +49,39 @@ class YeelightLight(LightProtocol):
 
         state = YeelightState(data)
 
+        if state.color is not None:
+            action_response = self._client.send_command('set_rgb', [state.color, 'smooth', state.duration])
+            response &= action_response['result'] == ['ok']
+
+        if state.kelvin is not None:
+            action_response = self._client.send_command('set_ct_abx', [state.kelvin, 'smooth', state.duration])
+            response &= action_response['result'] == ['ok']
+
+        # brightness second to last to avoid flickering/transient effects
+        if state.brightness is not None:
+            action_response = self._client.send_command('set_bright', [state.brightness, 'smooth', state.duration])
+            response &= action_response['result'] == ['ok']
+
+        # power should always be last, to avoid flicker/transient effects
         if state.power is not None:
-            action_response = self._client.send_command('set_power', [state.power])
+            action_response = self._client.send_command('set_power', [state.power, 'smooth', state.duration])
             response &= action_response['result'] == ['ok']
 
         return response
 
 
 class YeelightState(LightState):
-    power = None
-
     def __init__(self, data):
         if 'power' in data:
             self.power = 'on' if data['power'] else 'off'
+
+        self.duration = int(data['duration']) * 1000 if 'duration' in data else 30
+
+        if 'brightness' in data:
+            self.brightness = float(format(data['brightness'] * 100, '.2f'))
+
+        if 'color' in data:
+            self.color = 16777215  # TODO: always white, fix
+
+        if 'kelvin' is not None:
+            self.kelvin = data['kelvin']

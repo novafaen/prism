@@ -18,3 +18,11 @@ class LightProtocol:
 
 class LightState:
     power = None
+    duration = None
+    brightness = None
+    color = None
+    kelvin = None
+
+    def __str(self):
+        return '<LightState power="%s" duration="%i" brightness="%f" color="%s" kelvin="%i">' % \
+               (self.power, self.duration, self.brightness, self.color, self.kelvin)

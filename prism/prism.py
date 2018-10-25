@@ -34,12 +34,15 @@ class Prism(SMRTApp):
     def get_light(name):
         lifx_light = lifx_client.get_light(name)
 
-        if lifx_client.get_light(name) is not None:
+        if lifx_light is not None:
             return lifx_light
 
         yeelight_light = yeelight_client.get_light(name)
 
-        return yeelight_light
+        if yeelight_light is not None:
+            return yeelight_light
+
+        return None  # no light found
 
 
 # create prism and register it with smrt
@@ -85,7 +88,7 @@ def get_light(name):
     return response
 
 
-@app.route('/light/<string:name>/state', methods=['POST'])
+@app.route('/light/<string:name>/state', methods=['PUT'])
 @consumes('application/se.novafaen.prism.lightstate.v1+json')
 @produces('application/se.novafaen.prism.light.v1+json')
 def post_light_state(name):
