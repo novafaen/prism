@@ -12,6 +12,12 @@ class LightProtocol:
     def set_state(self, state):
         return self._client.set_state(state)
 
+    def set_power(self, on_off):
+        state = {
+            'power': on_off
+        }
+        return self._client.set_state(state)
+
     def __str__(self):
         return '<Light name="%s" protocol="%s">' % (self._name, self._client.protocol())
 

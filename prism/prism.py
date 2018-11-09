@@ -1,6 +1,6 @@
 import logging, json
 
-from smrt import SMRTApp, app, make_response, request, jsonify, produces, consumes
+from smrt import SMRTApp, app, make_response, request, jsonify, smrt
 from prism import lifx_client, yeelight_client
 
 
@@ -51,8 +51,8 @@ app_light = Prism()
 app.register_client(app_light)
 
 
-@app.route('/lights', methods=['GET'])
-@produces('application/se.novafaen.prism.lights.v1+json')
+@smrt('/lights',
+      produces='application/se.novafaen.prism.lights.v1+json')
 def get_lights():
     lights = app_light.get_lights()
     response = {
@@ -64,8 +64,8 @@ def get_lights():
     return response
 
 
-@app.route('/light/<string:name>', methods=['GET'])
-@produces('application/se.novafaen.prism.light.v1+json')
+@smrt('/light/<string:name>',
+      produces='application/se.novafaen.prism.light.v1+json')
 def get_light(name):
     light = app_light.get_light(name)
 
@@ -88,10 +88,11 @@ def get_light(name):
     return response
 
 
-@app.route('/light/<string:name>/state', methods=['PUT'])
-@consumes('application/se.novafaen.prism.lightstate.v1+json')
-@produces('application/se.novafaen.prism.light.v1+json')
-def post_light_state(name):
+@smrt('/light/<string:name>/state',
+      methods=['PUT'],
+      consumes='application/se.novafaen.prism.lightstate.v1+json',
+      produces='application/se.novafaen.prism.light.v1+json')
+def put_light_state(name):
     light = app_light.get_light(name)
 
     if light is None:
@@ -108,6 +109,41 @@ def post_light_state(name):
     data = json.loads(request.data)
 
     light.set_state(data)
+
+    response = make_response(jsonify(''), 204)
+    response.headers['Content-Type'] = 'application/se.novafaen.prism.light.v1+json'
+    return response
+
+
+@smrt('/light/<string:name>/state/power/on',
+      methods=['PUT'],
+      produces='application/se.novafaen.prism.light.v1+json')
+def put_power_on(name):
+    return _power(name, True)
+
+
+@smrt('/light/<string:name>/state/power/off',
+      methods=['PUT'],
+      produces='application/se.novafaen.prism.light.v1+json')
+def put_power_off(name):
+    return _power(name, False)
+
+
+def _power(name, on_off):
+    light = app_light.get_light(name)
+
+    if light is None:
+        body = {
+            'status': 'NotFound',
+            'message': 'Could not find light \'%s\'' % name
+        }
+        response = make_response(jsonify(body), 404)
+        response.headers['Content-Type'] = 'application/se.novafaen.smrt.error.v1+json'
+        return response
+
+    logging.debug('setting light "%s" power to on')
+
+    light.set_power(on_off)
 
     response = make_response(jsonify(''), 204)
     response.headers['Content-Type'] = 'application/se.novafaen.prism.light.v1+json'
