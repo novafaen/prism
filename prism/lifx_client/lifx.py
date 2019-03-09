@@ -13,7 +13,7 @@ def get_lights():
     _lifxlan.devices = None  # forces a refresh
     _lifxlan.num_lights = None
     raw_lights = _lifxlan.get_devices()  # get devices
-    logging.debug('lifx discovered %i lights', len(raw_lights))
+    logging.debug('[lifx] discovered %i lights', len(raw_lights))
 
     for raw_light in raw_lights:
         name = raw_light.get_label()
@@ -46,6 +46,9 @@ class LifxLight(LightProtocol):
 
     def get_name(self):
         return self._name
+
+    def is_on(self):
+        return self._client.get_power()
 
     def set_state(self, state_data):
         state = LifxState(state_data)

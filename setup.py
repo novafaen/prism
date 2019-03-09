@@ -9,10 +9,9 @@ setup(
     author='Kristoffer Nilsson',
     author_email='smrt@novafaen.se',
     url='http://smrt.novafaen.se/',
-    packages=[],
+    packages=['prism'],
     requires=[
         'smrt',
-        'jsonschema',
         'requests',
         'lifxlan',
         'yeelight'
