@@ -1,16 +1,27 @@
+"""YeeLight vendor/protocol implementation.
+
+Uses third party library yeelight, see https://gitlab.com/stavros/python-yeelight
+"""
+
 import logging
 
 import yeelight
 from yeelight import Bulb
 
-from prism.light import LightProtocol, LightState
+from prism.light import LightProtocol
 
 _cache = {}
 
+log = logging.getLogger('prism')
+
 
 def get_lights():
+    """Discover lights on Local Area Network.
+
+    :returns: ``[LightProtocol]``
+    """
     raw_lights = yeelight.discover_bulbs()
-    logging.debug('yeelight discovered %i lights', len(raw_lights))
+    log.debug('yeelight discovered %i lights', len(raw_lights))
 
     for raw_light in raw_lights:
         name = raw_light['capabilities']['name']
@@ -21,6 +32,10 @@ def get_lights():
 
 
 def get_light(name):
+    """Discover single light identified by name.
+
+    :returns: ``LightProtocol`` or ``None``
+    """
     if name not in _cache:
         get_lights()  # do nothing with response
 
@@ -31,57 +46,73 @@ def get_light(name):
 
 
 class YeelightLight(LightProtocol):
+    """YeeLight implementation for LightProtocol."""
+
     _client = None
 
     def __init__(self, name, client):
+        """Create and inialize YeelightLight.
+
+        :param name: name of light, should be unique
+        :param client: third party client
+        """
         self._name = name
         self._client = client
 
     @staticmethod
     def protocol():
+        """See ``LightProtocol.protocol`` documentation."""
         return 'Yeelight.v1'
 
     def get_name(self):
+        """See ``LightProtocol.get_name`` documentation."""
         return self._name
 
-    def set_state(self, data):
+    def set_state(self, state):
+        """See ``LightProtocol.set_state`` documentation."""
         response = True
 
-        state = YeelightState(data)
+        # minimum 1 second transision, looks better that way!
+        duration = _to_yeelight_duration(state.duration())
 
-        if state.color is not None:
-            action_response = self._client.send_command('set_rgb', [state.color, 'smooth', state.duration])
+        color = 16777215  # TODO: always white, fix #state.color()
+
+        if color is not None:
+            action_response = self._client.send_command('set_rgb', [color, 'smooth', duration])
             response &= action_response['result'] == ['ok']
 
-        if state.kelvin is not None:
-            action_response = self._client.send_command('set_ct_abx', [state.kelvin, 'smooth', state.duration])
+        kelvin = state.kelvin()
+
+        if kelvin is not None:
+            action_response = self._client.send_command('set_ct_abx', [kelvin, 'smooth', duration])
             response &= action_response['result'] == ['ok']
+
+        brightness = _to_yeelight_brightness(state.brightness())
 
         # brightness second to last to avoid flickering/transient effects
-        if state.brightness is not None:
-            action_response = self._client.send_command('set_bright', [state.brightness, 'smooth', state.duration])
+        if brightness is not None:
+            action_response = self._client.send_command('set_bright', [brightness, 'smooth', duration])
             response &= action_response['result'] == ['ok']
 
+        power = _to_yeelight_power(state.power())
+
         # power should always be last, to avoid flicker/transient effects
-        if state.power is not None:
-            action_response = self._client.send_command('set_power', [state.power, 'smooth', state.duration])
+        if power is not None:
+            action_response = self._client.send_command('set_power', [power, 'smooth', duration])
             response &= action_response['result'] == ['ok']
 
         return response
 
 
-class YeelightState(LightState):
-    def __init__(self, data):
-        if 'power' in data:
-            self.power = 'on' if data['power'] else 'off'
+def _to_yeelight_duration(duration):
+    return duration * 1000 if duration is not None else 60
 
-        self.duration = int(data['duration']) * 1000 if 'duration' in data else 30
 
-        if 'brightness' in data:
-            self.brightness = float(format(data['brightness'] * 100, '.2f'))
+def _to_yeelight_brightness(brightness):
+    return float(format(brightness, '.2f')) if brightness is not None else None
 
-        if 'color' in data:
-            self.color = 16777215  # TODO: always white, fix
 
-        if 'kelvin' is not None:
-            self.kelvin = data['kelvin']
+def _to_yeelight_power(power):
+    if power is None:
+        return None
+    return 'on' if power else 'off'

@@ -12,7 +12,6 @@ import logging
 from smrt import SMRTApp, app, make_response, request, jsonify, smrt
 
 from prism import lifx_client, yeelight_client
-from .light import LightState
 
 log = logging.getLogger('prism')
 
@@ -22,13 +21,13 @@ class Prism(SMRTApp):
 
     def __init__(self):
         """Create and initiate ````Prism`` application."""
-        log.debug('%s spinning up...', self.application_name())
+        logging.debug('%s spinning up...', self.application_name())
 
         SMRTApp.__init__(self)
 
-        # self.broadcast('{"type":"hello world","from":"prism"}')
+        #self.broadcast('{"type":"hello world","from":"prism"}')
 
-        log.debug('%s initiated!', self.application_name())
+        logging.debug('%s initiated!', self.application_name())
 
     def status(self):
         """Use ``SMRTApp`` documentation for ``status`` implementation."""
@@ -82,7 +81,7 @@ class Prism(SMRTApp):
 
 # create prism and register it with smrt framework
 prism = Prism()
-app.register_application(prism)
+app.register_client(prism)
 
 
 @smrt('/lights',
@@ -151,16 +150,11 @@ def put_light_state(name):
         response.headers['Content-Type'] = 'application/se.novafaen.smrt.error.v1+json'
         return response
 
+    logging.debug('setting light "%s" to state %s', name, request.data)
+
     data = json.loads(request.data)
 
-    state = LightState(
-        power=data.get('power', None),
-        duration=data.get('duration', None),
-        brightness=data.get('brightness', None),
-        color=data.get('color', None),
-        kelvin=data.get('kelvin', None))
-
-    light.set_state(state)
+    light.set_state(data)
 
     response = make_response(jsonify(''), 204)
     response.headers['Content-Type'] = 'application/se.novafaen.prism.light.v1+json'
@@ -201,7 +195,9 @@ def _power(name, on_off):
         response.headers['Content-Type'] = 'application/se.novafaen.smrt.error.v1+json'
         return response
 
-    light.set_state(LightState(power=on_off))
+    logging.debug('[prism] setting light "%s" power to %s', name, on_off)
+
+    light.set_power(on_off)
 
     response = make_response(jsonify(''), 204)
     response.headers['Content-Type'] = 'application/se.novafaen.prism.light.v1+json'
