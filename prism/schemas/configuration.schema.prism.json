@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "lights": {
+      "type": "array",
+      "items": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "protocol": {
+            "type": "string",
+            "enum": ["lifx", "yeelight"]
+          }
+        },
+        "required": ["name", "protocol"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["lights"],
+  "additionalProperties": false
+}

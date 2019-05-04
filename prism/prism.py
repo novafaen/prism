@@ -8,6 +8,7 @@ Current supported lights:
 """
 import json
 import logging
+import os
 
 from smrt import SMRTApp, app, make_response, request, jsonify, smrt
 
@@ -24,9 +25,9 @@ class Prism(SMRTApp):
         """Create and initiate ````Prism`` application."""
         log.debug('%s spinning up...', self.application_name())
 
-        SMRTApp.__init__(self)
+        self._schemas_path = os.path.join(os.path.dirname(__file__), 'schemas')
 
-        # self.broadcast('{"type":"hello world","from":"prism"}')
+        SMRTApp.__init__(self, self._schemas_path, 'configuration.schema.prism.json')
 
         log.debug('%s initiated!', self.application_name())
 
