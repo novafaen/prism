@@ -85,32 +85,32 @@ class LightState:
             if isinstance(power, bool):
                 self._power = power
             else:
-                raise TypeError('Light power must be either True or False')
+                raise TypeError('Light power must be either True or False, got="%s"' % power)
 
         if duration is not None:
             if isinstance(duration, int) and 0 <= duration <= 3600:
                 self._duration = duration
             else:
-                raise TypeError('Light duration must be between 0-3600')
+                raise TypeError('Light duration must be between 0-3600, got="%s"' % duration)
 
         if brightness is not None:
             if isinstance(brightness, int) and 0 <= brightness <= 100:
                 self._brightness = brightness
             else:
-                raise TypeError('Light brightness must be between 0-100')
+                raise TypeError('Light brightness must be between 0-100, got="%s"' % brightness)
 
         if color is not None:
             if isinstance(color, list) and len(color) == 3 and \
                     0 <= color[0] <= 255 and 0 <= color[1] <= 255 and 0 <= color[2] <= 255:
                 self._color = color
             else:
-                raise TypeError('Light color must be array of length 3, with values 0-255')
+                raise TypeError('Light color must be array of length 3, with values 0-255, got="%s"' % color)
 
         if kelvin is not None:
             if isinstance(kelvin, int) and 2500 <= kelvin <= 9000:
                 self._kelvin = kelvin
             else:
-                raise TypeError('Light kelvin must be between 2500-9000')
+                raise TypeError('Light kelvin must be between 2500-9000, got="%s"' % kelvin)
 
     def power(self):
         """Get power.
