@@ -5,6 +5,7 @@ Uses third party library LifxLAN, see https://github.com/mclarkk/lifxlan
 
 import colorsys
 import logging
+from threading import Timer
 
 from lifxlan import LifxLAN
 
@@ -89,30 +90,35 @@ class LifxLight(LightProtocol):
 
         color = state.color()
         kelvin = state.kelvin()
-
-        if color is not None:
-            self._client.set_color(_to_lifx_color(color, kelvin), duration=duration)
-
-        if kelvin is not None:
-            self._client.set_colortemp(kelvin, duration=duration)
-
         brightness = state.brightness()
 
-        # brightness second to last to avoid flickering/transient effects
         if brightness is not None:
-            self._client.set_brightness(_to_lifx_brightness(brightness), duration=duration)
+            log.debug('brightness and color at the same time, half duration')
+            duration = int(duration / 2)  # half truncated, see reason below.
+
+        if color is not None:
+            self._client.set_color(_to_lifx_color(color, kelvin), duration, False)
+        elif kelvin is not None:  # only set kelvin if no color is to be set
+            self._client.set_colortemp(kelvin, duration, False)
+
+        # due to the reason lifx can only have one ongoing action, and brightness
+        #  and color cannot be set the same time, delay brightness half the duration.
+        start = 0 if color is None and kelvin is None else (duration / 1000) + 1
+        log.debug('delay brightness %i seconds', start)
+
+        Timer(start, self._client.set_brightness, (_to_lifx_brightness(brightness), duration, False)).start()
 
         power = state.power()
 
         # power should always be last, to avoid flicker/transient effects
         if power is not None:
-            self._client.set_power(power, duration=duration)
+            self._client.set_power(power, duration, False)
 
         return None  # TODO: third party library does not give success or fail status
 
 
 def _to_lifx_duration(duration):
-    return duration if duration is not None else 0
+    return duration * 1000 if duration is not None else 0
 
 
 def _to_lifx_brightness(brightness):
@@ -120,7 +126,7 @@ def _to_lifx_brightness(brightness):
 
 
 def _to_lifx_color(color, kelvin):
-    red, green, blue = color[0] / 255, color[1] / 255, color[2] / 255
+    red, green, blue = int(color[0] / 255), int(color[1] / 255), int(color[2] / 255)
     (hue, saturation, brightness) = colorsys.rgb_to_hsv(red, green, blue)
     kelvin = kelvin if kelvin is not None else 0
 
