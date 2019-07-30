@@ -9,7 +9,7 @@ from threading import Timer
 
 from lifxlan import LifxLAN
 
-from prism.light import LightProtocol
+from prism.light import LightProtocol, LightState
 
 _lifxlan = LifxLAN()
 _cache = {}
@@ -34,8 +34,26 @@ def get_lights():
 
     for raw_light in raw_lights:
         name = raw_light.get_label()
+
         if name not in _cache:
-            _cache[name] = LifxLight(name, raw_light)
+            hue, saturation, brightness, kelvin = raw_light.get_color()
+            rgb_color = colorsys.hsv_to_rgb(
+                hue / 65535,
+                saturation / 65535,
+                brightness / 65535)
+
+            state = LightState(
+                power=raw_light.get_power() != 0,
+                color=[
+                    int(rgb_color[0] * 255),
+                    int(rgb_color[1] * 255),
+                    int(rgb_color[2] * 255)
+                ],
+                kelvin=kelvin,
+                brightness=int(brightness * 100 / 65523)
+            )
+
+            _cache[name] = LifxLight(name, raw_light, state=state)
 
     return list(_cache.values())
 
@@ -59,12 +77,13 @@ class LifxLight(LightProtocol):
 
     _client = None
 
-    def __init__(self, name, client):
+    def __init__(self, name, client, state=None):
         """Create and inialize LiftLight.
 
         :param name: name of light, should be unique
         :param client: third party client
         """
+        LightProtocol.__init__(self, state=state)
         self._name = name
         self._client = client
 
@@ -103,16 +122,16 @@ class LifxLight(LightProtocol):
 
         # due to the reason lifx can only have one ongoing action, and brightness
         #  and color cannot be set the same time, delay brightness half the duration.
-        start = 0 if color is None and kelvin is None else (duration / 1000) + 1
-        log.debug('delay brightness %i seconds', start)
+        delay = 0 if color is None and kelvin is None else (duration / 1000) + 1
+        log.debug('delay brightness %i seconds', delay)
 
-        Timer(start, self._client.set_brightness, (_to_lifx_brightness(brightness), duration, False)).start()
+        Timer(delay, self._client.set_brightness, (_to_lifx_brightness(brightness), duration, False)).start()
 
         power = state.power()
 
         # power should always be last, to avoid flicker/transient effects
         if power is not None:
-            self._client.set_power(power, duration, False)
+            self._client.set_power(power, 0, True)
 
         return None  # TODO: third party library does not give success or fail status
 

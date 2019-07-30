@@ -11,6 +11,7 @@ import logging
 import os
 
 from smrt import SMRTApp, app, make_response, request, jsonify, smrt
+from smrt import ResouceNotFound
 
 from prism import lifx_client, yeelight_client
 from .light import LightState
@@ -94,11 +95,13 @@ def get_lights():
     :returns: ``se.novafaen.prism.lights.v1+json``
     """
     lights = prism.get_lights()
-    response = {
-        'lights': [{'name': l.get_name(), 'protocol': l.protocol()} for l in lights]
+    body = {
+        'lights': [light.json() for light in lights]
     }
 
-    response = make_response(jsonify(response), 200)
+    log.debug(body)
+
+    response = make_response(jsonify(body), 200)
     response.headers['Content-Type'] = 'application/se.novafaen.prism.lights.v1+json'
     return response
 
@@ -113,18 +116,9 @@ def get_light(name):
     light = prism.get_light(name)
 
     if light is None:
-        body = {
-            'status': 'NotFound',
-            'message': 'Could not find light \'%s\'' % name
-        }
-        response = make_response(jsonify(body), 404)
-        response.headers['Content-Type'] = 'application/se.novafaen.smrt.error.v1+json'
-        return response
+        raise ResouceNotFound('Could not find light \'{}\''.format(name))
 
-    body = {
-        'name': light.get_name(),
-        'protocol': light.protocol()
-    }
+    body = light.json()
 
     response = make_response(jsonify(body), 200)
     response.headers['Content-Type'] = 'application/se.novafaen.prism.light.v1+json'
@@ -163,7 +157,7 @@ def put_light_state(name):
 
     light.set_state(state)
 
-    response = make_response(jsonify(''), 204)
+    response = make_response(jsonify(''), 200)
     response.headers['Content-Type'] = 'application/se.novafaen.prism.light.v1+json'
     return response
 
@@ -188,6 +182,21 @@ def put_power_off(name):
     :returns: ``application/se.novafaen.prism.light.v1+json``
     """
     return _power(name, False)
+
+
+@smrt('/light/<string:name>/state/power/toggle',
+      methods=['PUT'],
+      produces='application/se.novafaen.prism.light.v1+json')
+def put_power_toggle(name):
+    """Endpoint to turn off light, identified by name.
+
+    :returns: ``application/se.novafaen.prism.light.v1+json``
+    """
+    return _toggle(name)
+
+
+def _toggle(name):
+    pass
 
 
 def _power(name, on_off):

@@ -56,6 +56,7 @@ class YeelightLight(LightProtocol):
         :param name: name of light, should be unique
         :param client: third party client
         """
+        LightProtocol.__init__(self)
         self._name = name
         self._client = client
 
