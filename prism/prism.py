@@ -194,7 +194,11 @@ def put_power_toggle(name):
 
 
 def _toggle(name):
-    pass
+    light = prism.get_light(name)
+
+    state = light.get_state()
+
+    return _power(name, not state.power())
 
 
 def _power(name, on_off):

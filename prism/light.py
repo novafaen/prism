@@ -194,6 +194,13 @@ class LightProtocol:
 
         return successful
 
+    def get_state(self):
+        """Get last known state.
+
+        :returns: ``LightState`` object.
+        """
+        return self._last_state
+
     def _set_state(self, state):
         """See ``LightProtocol.set_state`` documentation."""
         raise NotImplementedError('Client is missing "_set_state" function implementation')
