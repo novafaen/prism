@@ -3,7 +3,10 @@
 When adding support for a new protocol or vendor, this impl
 """
 
+import logging as loggr
 import time
+
+log = loggr.getLogger('prism')
 
 
 class LightState:
@@ -121,6 +124,10 @@ class LightState:
         return self._kelvin
 
     def json(self):
+        """Return state as json representation.
+
+        :returns: ``Directory`` light state
+        """
         return {
             'power': self._power,
             'duration': self._duration,
@@ -134,9 +141,10 @@ class LightState:
 
         :returns: ``String`` representation.
         """
-        return '<LightState power={._power} duration={._duration} ' \
-               'brightness={._brightness} color={._color} '\
-               'kelvin={._kelvin}>'.format(self)
+        return '<LightState power={} duration={} ' \
+               'brightness={} color={} kelvin={}>'.format(
+                    self._power, self._duration, self._brightness,
+                    self._color, self._kelvin)
 
 
 class LightProtocol:
@@ -176,14 +184,19 @@ class LightProtocol:
         if not isinstance(state, LightState):
             return RuntimeError('Invalid state, must implement LightState class')
 
-        success = self._client.set_state(state)
+        successful = self._set_state(state)
+        log.debug('change state successful=%s', successful)
 
-        if success:
+        if successful:
             self._last_seen = int(time.time())
 
         self._last_state.update(state)
 
-        return success
+        return successful
+
+    def _set_state(self, state):
+        """See ``LightProtocol.set_state`` documentation."""
+        raise NotImplementedError('Client is missing "_set_state" function implementation')
 
     def set_power(self, on_off):
         """Set power state for light source.

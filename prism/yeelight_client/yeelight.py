@@ -69,9 +69,9 @@ class YeelightLight(LightProtocol):
         """See ``LightProtocol.get_name`` documentation."""
         return self._name
 
-    def set_state(self, state):
+    def _set_state(self, state):
         """See ``LightProtocol.set_state`` documentation."""
-        response = True
+        successful = True
 
         # minimum 1 second transision, looks better that way!
         duration = _to_yeelight_duration(state.duration())
@@ -80,29 +80,29 @@ class YeelightLight(LightProtocol):
 
         if color is not None:
             action_response = self._client.send_command('set_rgb', [color, 'smooth', duration])
-            response &= action_response['result'] == ['ok']
+            successful &= action_response['result'] == ['ok']
 
         kelvin = state.kelvin()
 
         if kelvin is not None:
             action_response = self._client.send_command('set_ct_abx', [kelvin, 'smooth', duration])
-            response &= action_response['result'] == ['ok']
+            successful &= action_response['result'] == ['ok']
 
         brightness = _to_yeelight_brightness(state.brightness())
 
         # brightness second to last to avoid flickering/transient effects
         if brightness is not None:
             action_response = self._client.send_command('set_bright', [brightness, 'smooth', duration])
-            response &= action_response['result'] == ['ok']
+            successful &= action_response['result'] == ['ok']
 
         power = _to_yeelight_power(state.power())
 
         # power should always be last, to avoid flicker/transient effects
         if power is not None:
             action_response = self._client.send_command('set_power', [power, 'smooth', duration])
-            response &= action_response['result'] == ['ok']
+            successful &= action_response['result'] == ['ok']
 
-        return response
+        return successful
 
 
 def _to_yeelight_duration(duration):
