@@ -35,25 +35,28 @@ def get_lights():
     for raw_light in raw_lights:
         name = raw_light.get_label()
 
+        # create state
+        hue, saturation, brightness, kelvin = raw_light.get_color()
+        rgb_color = colorsys.hsv_to_rgb(
+            hue / 65535,
+            saturation / 65535,
+            brightness / 65535)
+
+        state = LightState(
+            power=raw_light.get_power() != 0,
+            color=[
+                int(rgb_color[0] * 255),
+                int(rgb_color[1] * 255),
+                int(rgb_color[2] * 255)
+            ],
+            kelvin=kelvin,
+            brightness=int(brightness * 100 / 65523)
+        )
+
         if name not in _cache:
-            hue, saturation, brightness, kelvin = raw_light.get_color()
-            rgb_color = colorsys.hsv_to_rgb(
-                hue / 65535,
-                saturation / 65535,
-                brightness / 65535)
-
-            state = LightState(
-                power=raw_light.get_power() != 0,
-                color=[
-                    int(rgb_color[0] * 255),
-                    int(rgb_color[1] * 255),
-                    int(rgb_color[2] * 255)
-                ],
-                kelvin=kelvin,
-                brightness=int(brightness * 100 / 65523)
-            )
-
             _cache[name] = LifxLight(name, raw_light, state=state)
+        else:
+            _cache[name].update(state)
 
     return list(_cache.values())
 
