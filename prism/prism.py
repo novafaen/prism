@@ -95,13 +95,11 @@ def get_lights():
     :returns: ``se.novafaen.prism.lights.v1+json``
     """
     lights = prism.get_lights()
-    body = {
+
+    response_body = {
         'lights': [light.json() for light in lights]
     }
-
-    log.debug(body)
-
-    response = make_response(jsonify(body), 200)
+    response = make_response(jsonify(response_body), 200)
     response.headers['Content-Type'] = 'application/se.novafaen.prism.lights.v1+json'
     return response
 
@@ -118,9 +116,8 @@ def get_light(name):
     if light is None:
         raise ResouceNotFound('Could not find light \'{}\''.format(name))
 
-    body = light.json()
-
-    response = make_response(jsonify(body), 200)
+    response_body = light.json()
+    response = make_response(jsonify(response_body), 200)
     response.headers['Content-Type'] = 'application/se.novafaen.prism.light.v1+json'
     return response
 
@@ -157,7 +154,8 @@ def put_light_state(name):
 
     light.set_state(state)
 
-    response = make_response(jsonify(''), 200)
+    response_body = light.json()
+    response = make_response(jsonify(response_body), 200)
     response.headers['Content-Type'] = 'application/se.novafaen.prism.light.v1+json'
     return response
 
@@ -213,6 +211,7 @@ def _power(name, on_off):
 
     light.set_state(LightState(power=on_off))
 
-    response = make_response(jsonify(''), 204)
+    response_body = light.json()
+    response = make_response(jsonify(response_body), 200)
     response.headers['Content-Type'] = 'application/se.novafaen.prism.light.v1+json'
     return response
