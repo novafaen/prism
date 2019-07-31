@@ -103,7 +103,7 @@ class LifxLight(LightProtocol):
         """
         return self._client.get_power()
 
-    def set_state(self, state):
+    def _set_state(self, state):
         """See ``LightProtocol.set_state`` documentation."""
         duration = _to_lifx_duration(state.duration())
 
@@ -123,9 +123,10 @@ class LifxLight(LightProtocol):
         # due to the reason lifx can only have one ongoing action, and brightness
         #  and color cannot be set the same time, delay brightness half the duration.
         delay = 0 if color is None and kelvin is None else (duration / 1000) + 1
-        log.debug('delay brightness %i seconds', delay)
 
-        Timer(delay, self._client.set_brightness, (_to_lifx_brightness(brightness), duration, False)).start()
+        if brightness is not None:
+            log.debug('delay brightness %i seconds', delay)
+            Timer(delay, self._client.set_brightness, (_to_lifx_brightness(brightness), duration, False)).start()
 
         power = state.power()
 
@@ -133,7 +134,7 @@ class LifxLight(LightProtocol):
         if power is not None:
             self._client.set_power(power, 0, True)
 
-        return None  # TODO: third party library does not give success or fail status
+        return True  # assume action was successful, lifxlan does not say yay or nay
 
 
 def _to_lifx_duration(duration):
