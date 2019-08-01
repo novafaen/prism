@@ -194,6 +194,11 @@ class LightProtocol:
 
         return successful
 
+    def update_state(self, state):
+        """Update state and last seen attributes."""
+        self._last_seen = int(time.time())
+        self._last_state.update(state)
+
     def get_state(self):
         """Get last known state.
 

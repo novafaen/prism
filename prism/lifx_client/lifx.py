@@ -56,7 +56,7 @@ def get_lights():
         if name not in _cache:
             _cache[name] = LifxLight(name, raw_light, state=state)
         else:
-            _cache[name].update(state)
+            _cache[name].update_state(state)
 
     return list(_cache.values())
 
@@ -114,7 +114,7 @@ class LifxLight(LightProtocol):
         kelvin = state.kelvin()
         brightness = state.brightness()
 
-        if brightness is not None:
+        if brightness is not None and brightness > 0:
             log.debug('brightness and color at the same time, half duration')
             duration = int(duration / 2)  # half truncated, see reason below.
 
