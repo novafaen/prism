@@ -196,6 +196,9 @@ def put_power_toggle(name):
 def _toggle(name):
     light = prism.get_light(name)
 
+    if light is None:
+        raise ResouceNotFound('Could not find requested light \'{}\', it might be offline.'.format(name))
+
     state = light.get_state()
 
     return _power(name, not state.power())
@@ -205,13 +208,7 @@ def _power(name, on_off):
     light = prism.get_light(name)
 
     if light is None:
-        body = {
-            'status': 'NotFound',
-            'message': 'Could not find light \'%s\'' % name
-        }
-        response = make_response(jsonify(body), 404)
-        response.headers['Content-Type'] = 'application/se.novafaen.smrt.error.v1+json'
-        return response
+        raise ResouceNotFound('Could not find requested light \'{}\', it might be offline.'.format(name))
 
     light.set_state(LightState(power=on_off))
 
