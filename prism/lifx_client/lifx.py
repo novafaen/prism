@@ -30,7 +30,7 @@ def get_lights():
         log.warning('could not get lifx lights: %s', err)
         return []
 
-    log.debug('discovered %i lifx lights', len(raw_lights))
+    log.debug('discovered %i lifx lights: %s', len(raw_lights), [l.get_label() for l in raw_lights].join(','))
 
     for raw_light in raw_lights:
         name = raw_light.get_label()
