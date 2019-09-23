@@ -6,8 +6,8 @@ Current supported lights:
 - Lifx LAN.
 - Yeelight LAN.
 """
+import logging as loggr
 import json
-import logging
 import os
 
 from smrt import SMRTApp, app, make_response, request, jsonify, smrt
@@ -16,7 +16,7 @@ from smrt import ResouceNotFound
 from prism import lifx_client, yeelight_client
 from .light import LightState
 
-log = logging.getLogger('prism')
+log = loggr.getLogger('smrt')
 
 
 class Prism(SMRTApp):
@@ -135,13 +135,7 @@ def put_light_state(name):
     light = prism.get_light(name)
 
     if light is None:
-        body = {
-            'status': 'NotFound',
-            'message': 'Could not find light \'%s\'' % name
-        }
-        response = make_response(jsonify(body), 404)
-        response.headers['Content-Type'] = 'application/se.novafaen.smrt.error.v1+json'
-        return response
+        raise ResouceNotFound('Could not find requested light \'{}\', it might be offline.'.format(name))
 
     data = json.loads(request.data)
 

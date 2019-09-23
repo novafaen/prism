@@ -12,7 +12,7 @@ from prism.light import LightProtocol
 
 _cache = {}
 
-log = logging.getLogger('prism')
+log = logging.getLogger('smrt')
 
 
 def get_lights():

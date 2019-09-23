@@ -6,7 +6,7 @@ When adding support for a new protocol or vendor, this impl
 import logging as loggr
 import time
 
-log = loggr.getLogger('prism')
+log = loggr.getLogger('smrt')
 
 
 class LightState:
