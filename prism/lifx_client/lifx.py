@@ -112,24 +112,12 @@ class LifxLight(LightProtocol):
 
         color = state.color()
         kelvin = state.kelvin()
-        brightness = state.brightness()
-
-        if brightness is not None and brightness > 0:
-            log.debug('brightness and color at the same time, half duration')
-            duration = int(duration / 2)  # half truncated, see reason below.
+        brightness = state.brightness()  # can be None
 
         if color is not None:
-            self._client.set_color(_to_lifx_color(color, kelvin), duration, False)
+            self._client.set_color(_to_lifx_color(color, kelvin, color_brightness=brightness), duration, False)
         elif kelvin is not None:  # only set kelvin if no color is to be set
             self._client.set_colortemp(kelvin, duration, False)
-
-        # due to the reason lifx can only have one ongoing action, and brightness
-        #  and color cannot be set the same time, delay brightness half the duration.
-        delay = 0 if color is None and kelvin is None else (duration / 1000) + 1
-
-        if brightness is not None:
-            log.debug('delay brightness %i seconds', delay)
-            Timer(delay, self._client.set_brightness, (_to_lifx_brightness(brightness), duration, False)).start()
 
         power = state.power()
 
@@ -148,10 +136,10 @@ def _to_lifx_brightness(brightness):
     return int(65535 * (float(brightness) / 100.0)) if brightness is not None else 0
 
 
-def _to_lifx_color(color, kelvin, specific_brightness=None):
+def _to_lifx_color(color, kelvin, color_brightness=None):
     red, green, blue = int(color[0] / 255), int(color[1] / 255), int(color[2] / 255)
     (hue, saturation, brightness) = colorsys.rgb_to_hsv(red, green, blue)
     kelvin = kelvin if kelvin is not None else 0
-    brightness = specific_brightness if specific_brightness is not None else brightness
+    brightness = color_brightness if color_brightness is not None else brightness
 
     return [hue * 65535, saturation * 65535, brightness * 65535, kelvin]
