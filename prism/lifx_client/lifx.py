@@ -148,9 +148,10 @@ def _to_lifx_brightness(brightness):
     return int(65535 * (float(brightness) / 100.0)) if brightness is not None else 0
 
 
-def _to_lifx_color(color, kelvin):
+def _to_lifx_color(color, kelvin, specific_brightness=None):
     red, green, blue = int(color[0] / 255), int(color[1] / 255), int(color[2] / 255)
     (hue, saturation, brightness) = colorsys.rgb_to_hsv(red, green, blue)
     kelvin = kelvin if kelvin is not None else 0
+    brightness = specific_brightness if specific_brightness is not None else brightness
 
     return [hue * 65535, saturation * 65535, brightness * 65535, kelvin]
