@@ -4,3 +4,4 @@ configuration.json
 *egg-info
 __pycache__
 dist/
+.vscode/
